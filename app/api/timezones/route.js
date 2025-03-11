@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json(timezones)
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch timezones" },
+      { error: "❌ Failed to fetch timezones" },
       { status: 500 }
     )
   }
