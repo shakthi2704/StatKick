@@ -8,8 +8,10 @@ export async function GET() {
     const client = new MongoClient(uri)
     await client.connect()
 
+    console.log("MongoDB connected successfully!")
+
     return NextResponse.json({
-      message: "MongoDB connected successfully!!!!!!!!!!!!!!!!!!!!!!",
+      message: "MongoDB connected successfully!",
     })
   } catch (error) {
     console.error("MongoDB Connection Error:", error)
