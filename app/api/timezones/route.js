@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { connectDB } from "@/lib/mongodb"
-import { Timezone } from "@/models/Timezone"
+import { Timezone } from "@/lib/models/TimezoneModel"
 
 export async function GET() {
   try {
