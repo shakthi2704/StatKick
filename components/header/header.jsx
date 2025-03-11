@@ -13,7 +13,7 @@ const Header = () => {
   return (
     <div className="sticky top-0 z-10 backdrop-blur shadow-md">
       <TopBar />
-      <header className="flex h-16 shrink-0 items-center gap-2  transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 dark:shadow-md dark:inset-shadow-gray-700">
+      <header className="flex h-12 shrink-0 items-center gap-2  transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 dark:shadow-md dark:inset-shadow-gray-700">
         <div className="flex items-center gap-2">
           <Separator orientation="vertical" className="mr-2 h-4" />
           <a href="#" className="flex items-center gap-2 font-medium">
@@ -29,7 +29,9 @@ const Header = () => {
           </a>
         </div>
 
-        <div className="flex-1 flex justify-center"></div>
+        <div className="flex-1 flex justify-center">
+          <MainNav />
+        </div>
 
         <div className="flex items-center  gap-1.5 md:gap-2  pr-4">
           <SearchInput />

@@ -1,8 +1,8 @@
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme/theme-provider"
-import Header from "@/components/dashboard/header/header"
-import MainNav from "@/components/dashboard/main-nav/main-nav"
+import Header from "@/components/header/header"
+import Footer from "@/components/footer/Footer"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,13 +25,14 @@ export default function RootLayout({ children }) {
             enableSystem
             disableTransitionOnChange
           >
-            <div className="h-screen flex flex-col px-4 md:px-8 ">
+            <div className="h-screen flex flex-col px-4 py-4 md:px-8">
               <Header />
-              <div className="my-4 py-4">
-                <MainNav />
-              </div>
-              <div className="flex-1 rounded-xl bg-muted/20 p-4">
+
+              <div className="flex-1 rounded-xl py-4 my-4 bg-muted/20 p-4">
                 {children}
+              </div>
+              <div>
+                <Footer />
               </div>
             </div>
           </ThemeProvider>

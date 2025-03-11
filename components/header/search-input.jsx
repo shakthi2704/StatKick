@@ -8,10 +8,9 @@ const SearchInput = () => {
   return (
     <Button
       variant="ghost"
-      className="relative h-8 w-full flex-1 justify-start rounded-md border-b-2 text-sm font-normal text-muted-foreground shadow-none hover:bg-muted/50 sm:pr-12md:flex-none  md:w-56 md:flex-none"
+      className="relative h-8 w-full flex-1 justify-start rounded-md border-b-2 text-sm font-normal text-muted-foreground shadow-none hover:bg-muted/50 "
     >
-      <Search />
-      <span className="ml-3">placeholder</span>
+      <Search size={20} />
     </Button>
   )
 }
