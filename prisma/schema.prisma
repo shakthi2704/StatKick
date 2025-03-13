@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Country {
+  id           Int      @id @default(autoincrement())
+  name         String
+  code         String?
+  flag         String?
+  last_updated DateTime @default(now()) @updatedAt
+}
+
+model Season {
+  id           Int      @id @default(autoincrement())
+  year         Int      @unique @db.SmallInt
+  last_updated DateTime @default(now()) @updatedAt 
+}
