@@ -7,16 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Country {
-  id           Int      @id @default(autoincrement())
-  name         String
-  code         String?
-  flag         String?
-  last_updated DateTime @default(now()) @updatedAt
+model football_associations {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  code        String   @unique
+  lastUpdated DateTime @updatedAt
 }
 
 model Season {
   id           Int      @id @default(autoincrement())
   year         Int      @unique @db.SmallInt
-  last_updated DateTime @default(now()) @updatedAt 
+  lastUpdated  DateTime @default(now()) @updatedAt 
+}
+
+
+model Country {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
+  code         String   @unique
+  flag         String?
+  lastUpdated  DateTime @default(now()) @updatedAt
 }
