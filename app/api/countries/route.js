@@ -3,7 +3,6 @@ import { PrismaClient } from "@prisma/client"
 import axios from "axios"
 
 const prisma = new PrismaClient()
-const REVALIDATE_TIME = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 export async function GET() {
   console.log("🟢 GET function is being executed...")
@@ -39,9 +38,10 @@ export async function GET() {
 
     console.log("💾 Inserting new country data...")
     for (const country of countries) {
-      let countryCode = country.code || "WORLD" // Assign "WORLD" if null
+      let countryCode = country.code ?? null
+      let countryName = country.name
 
-      if (!country.name) {
+      if (!countryName) {
         console.warn(`⚠️ Skipping invalid country: ${JSON.stringify(country)}`)
         failedCount++
         continue
@@ -49,24 +49,24 @@ export async function GET() {
 
       try {
         await prisma.country.upsert({
-          where: { code: countryCode },
+          where: { name: countryName },
           update: {
-            name: country.name,
+            code: countryCode, // ✅ Now, it's safe to be null
             flag: country.flag,
             lastUpdated: new Date(),
           },
           create: {
-            name: country.name,
+            name: countryName,
             code: countryCode,
             flag: country.flag,
             lastUpdated: new Date(),
           },
         })
-        console.log(`✅ Inserted: ${country.name} (${countryCode})`)
+        console.log(`✅ Inserted: ${countryName} (${countryCode})`)
         insertedCount++
       } catch (err) {
         console.error(
-          `❌ Failed to insert country: ${country.name} (${countryCode}) - ${err.message}`
+          `❌ Failed to insert country: ${countryName} (${countryCode}) - ${err.message}`
         )
         failedCount++
       }
