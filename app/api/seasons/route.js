@@ -9,60 +9,54 @@ export async function GET() {
   console.log("GET function is being executed...")
 
   try {
-    // Try fetching the latest season entry from the database first
+    // Fetch the latest season entry
     const latestSeason = await prisma.season.findFirst({
-      orderBy: { last_updated: "desc" },
+      orderBy: { lastUpdated: "desc" }, // ✅ Use camelCase, not snake_case
     })
 
-    // If there is a recent entry (within the last 7 days), return from DB
     if (
       latestSeason &&
-      new Date().getTime() - new Date(latestSeason.last_updated).getTime() <
+      new Date().getTime() - new Date(latestSeason.lastUpdated).getTime() <
         REVALIDATE_TIME
     ) {
       console.log("Data fetched from the database!")
       return NextResponse.json({ seasons: await prisma.season.findMany() })
     }
 
-    // If no data in DB or it's outdated, fetch from the API
-    console.log("Fetching data from the API...")
-    const options = {
-      method: "GET",
-      url: "https://api-football-v1.p.rapidapi.com/v3/leagues/seasons",
-      headers: {
-        "x-rapidapi-key": process.env.NEXT_RAPIDAPI_KEY,
-        "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
-      },
-    }
+    // Fetch from API
+    console.log("Fetching data from API...")
+    const response = await axios.get(
+      "https://api-football-v1.p.rapidapi.com/v3/leagues/seasons",
+      {
+        headers: {
+          "x-rapidapi-key": process.env.NEXT_RAPIDAPI_KEY,
+          "x-rapidapi-host": "api-football-v1.p.rapidapi.com",
+        },
+      }
+    )
 
-    const response = await axios.request(options)
     const seasons = response.data.response
 
-    console.log("Fetched seasons from the API:", seasons)
-
-    // If no seasons are found, return an error response
     if (!seasons || seasons.length === 0) {
       return NextResponse.json(
-        { error: "No seasons found in the API response" },
+        { error: "No seasons found in API response" },
         { status: 500 }
       )
     }
 
-    // Store data in DB - Refresh all records
-    console.log("Storing seasons in the database...")
-    await prisma.season.deleteMany() // ✅ Keep only one deleteMany()
+    console.log(`Fetched ${seasons.length} seasons from API.`)
 
-    // Store the new seasons in the database
-    await prisma.season.createMany({
-      data: seasons.map((season) => ({
-        year: season,
-        last_updated: new Date(),
-      })),
-    })
+    // **Upsert data instead of deleting everything**
+    for (const season of seasons) {
+      await prisma.season.upsert({
+        where: { year: season }, // ✅ Check if season exists
+        update: { lastUpdated: new Date() }, // ✅ Update timestamp
+        create: { year: season, lastUpdated: new Date() }, // ✅ Insert if missing
+      })
+    }
 
-    console.log("Seasons stored successfully in the database!")
+    console.log("Seasons updated successfully!")
 
-    // Return the updated data
     return NextResponse.json({ seasons })
   } catch (error) {
     console.error("Error fetching seasons:", error)
