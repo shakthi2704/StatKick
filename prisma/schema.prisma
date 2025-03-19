@@ -91,6 +91,10 @@ model Team {
   transfersOut     PlayerTransfer[]  @relation(name: "TransferFrom")
   transfersIn      PlayerTransfer[]  @relation(name: "TransferTo")
 
+
+  coaches      Coach[]
+  coachCareers CoachCareer[]
+
   lastUpdated DateTime @default(now()) @updatedAt
 }
 
@@ -177,4 +181,40 @@ model PlayerTransfer {
   transferFee  String?
 
   @@unique([playerId, fromTeamId, toTeamId, transferDate])
+}
+
+model Coach {
+  id         Int      @id @default(autoincrement())
+  externalId Int      @unique
+  name       String
+  firstname  String?
+  lastname   String?
+  age        Int?
+  birthDate  DateTime?
+  birthPlace String?
+  birthCountry String?
+  nationality  String?
+  height       String?
+  weight       String?
+  photoUrl     String?
+
+
+  teamId Int?
+  team   Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  career CoachCareer[]
+
+  lastUpdated DateTime @default(now()) @updatedAt
+}
+
+model CoachCareer {
+  id       Int    @id @default(autoincrement())
+  coach    Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId  Int
+  team     Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId   Int
+  start    DateTime?
+  end      DateTime?
+  
+  @@unique([coachId, teamId, start])
 }
