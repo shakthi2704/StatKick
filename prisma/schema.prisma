@@ -7,89 +7,96 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model football_associations {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  code        String   @unique
-  lastUpdated DateTime @updatedAt
+model FootballAssociation {
+  id          Int                          @id @default(autoincrement())
+  name        String                       @unique
+  code        String                       @unique
+  lastUpdated DateTime                     @updatedAt
   countries   FootballAssociationCountry[]
 }
 
 model Season {
-  id           Int            @id @default(autoincrement())
-  year         Int            @unique @db.SmallInt
-  lastUpdated  DateTime       @default(now()) @updatedAt
-  LeagueSeason LeagueSeason[]
+  id            Int            @id @default(autoincrement())
+  year          Int            @unique @db.SmallInt
+  lastUpdated   DateTime       @default(now()) @updatedAt
+  leagueSeasons LeagueSeason[]
 }
 
-model Country { 
+model Country {
   id          Int      @id @default(autoincrement())
   name        String   @unique
   code        String?
   flag        String?
   lastUpdated DateTime @default(now()) @updatedAt
 
-  leagues     League[] 
-  
+  leagues              League[]
+  teams                Team[]
   footballAssociations FootballAssociationCountry[]
 }
 
 model League {
-  id           Int            @id @default(autoincrement())
-  leagueId     Int            @unique 
-  name         String
-  type         String
-  logo         String?
-  countryId    Int?
-  country      Country?       @relation(fields: [countryId], references: [id], onDelete: SetNull)
-  lastUpdated  DateTime       @default(now()) @updatedAt
-  LeagueSeason LeagueSeason[]
+  id               Int               @id @default(autoincrement())
+  leagueId         Int               @unique
+  name             String
+  type             String
+  logo             String?
+  countryId        Int?
+  country          Country?          @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  lastUpdated      DateTime          @default(now()) @updatedAt
+  leagueSeasons    LeagueSeason[]
+  playerStatistics PlayerStatistic[]
 }
 
 model LeagueSeason {
-  id         Int      @id @default(autoincrement())
-  league     League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  leagueId   Int
-  season     Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  seasonId   Int
+  id          Int      @id @default(autoincrement())
+  league      League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueId    Int
+  season      Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  seasonId    Int
   lastUpdated DateTime @default(now()) @updatedAt
 
   @@unique([leagueId, seasonId])
 }
 
 model FootballAssociationCountry {
-  id            Int                  @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
-  association   football_associations @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  association   FootballAssociation @relation(fields: [associationId], references: [id], onDelete: Cascade)
   associationId Int
 
-  country       Country               @relation(fields: [countryId], references: [id], onDelete: Cascade)
-  countryId     Int
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  countryId Int
 
-  lastUpdated   DateTime             @default(now()) @updatedAt
+  lastUpdated DateTime @default(now()) @updatedAt
 
   @@unique([associationId, countryId])
 }
 
 model Team {
-  id          Int      @id @default(autoincrement())
-  teamId      Int      @unique  // From API
-  name        String
-  code        String?
-  country     String   // Direct country name (to cross-check with Country table)
-  founded     Int?
-  national    Boolean
-  logo        String?
+  id         Int      @id @default(autoincrement())
+  externalId Int      @unique
+  name       String   @unique
+  code       String?
+  countryId  Int?
+  country    Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  founded    Int?
+  national   Boolean?
+  logo       String?
+
+  homeVenueId Int?
+  homeVenue   Venue? @relation(fields: [homeVenueId], references: [id], onDelete: SetNull)
+
+  playerTeams      PlayerTeam[]
+  playerStatistics PlayerStatistic[]
+  transfersOut     PlayerTransfer[]  @relation(name: "TransferFrom")
+  transfersIn      PlayerTransfer[]  @relation(name: "TransferTo")
+
   lastUpdated DateTime @default(now()) @updatedAt
-
-  venue       Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  venueId     Int?
 }
-
 
 model Venue {
   id          Int      @id @default(autoincrement())
-  venueId     Int      @unique  // From API
+  venueId     Int      @unique
   name        String
   address     String?
   city        String
@@ -98,6 +105,76 @@ model Venue {
   image       String?
   lastUpdated DateTime @default(now()) @updatedAt
 
-  teams       Team[]
+  teams Team[]
 }
 
+model Player {
+  id           Int       @id @default(autoincrement())
+  externalId   Int       @unique
+  name         String
+  firstname    String?
+  lastname     String?
+  age          Int?
+  birthDate    DateTime?
+  birthPlace   String?
+  birthCountry String?
+  nationality  String?
+  height       String?
+  weight       String?
+  position     String?
+  photoUrl     String?
+
+  playerTeams      PlayerTeam[]
+  playerStatistics PlayerStatistic[]
+  playerTransfers  PlayerTransfer[]
+
+  lastUpdated DateTime @default(now()) @updatedAt
+}
+
+model PlayerTeam {
+  id       Int    @id @default(autoincrement())
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId Int
+  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId   Int
+  season   Int
+
+  @@unique([playerId, teamId, season])
+}
+
+model PlayerStatistic {
+  id            Int    @id @default(autoincrement())
+  player        Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId      Int
+  team          Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId        Int
+  league        League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueId      Int
+  season        Int
+  gamesPlayed   Int?
+  minutesPlayed Int?
+  goals         Int?
+  assists       Int?
+  yellowCards   Int?
+  redCards      Int?
+  cleanSheets   Int?
+
+  @@unique([playerId, teamId, leagueId, season])
+}
+
+model PlayerTransfer {
+  id       Int    @id @default(autoincrement())
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId Int
+
+  fromTeam   Team? @relation(name: "TransferFrom", fields: [fromTeamId], references: [id], onDelete: SetNull)
+  fromTeamId Int?
+
+  toTeam   Team? @relation(name: "TransferTo", fields: [toTeamId], references: [id], onDelete: SetNull)
+  toTeamId Int?
+
+  transferDate DateTime?
+  transferFee  String?
+
+  @@unique([playerId, fromTeamId, toTeamId, transferDate])
+}

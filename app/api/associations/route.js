@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    const associations = await prisma.football_associations.findMany()
+    const associations = await prisma.footballAssociation.findMany()
     return NextResponse.json(associations, { status: 200 })
   } catch (error) {
     console.error("Error fetching associations:", error)

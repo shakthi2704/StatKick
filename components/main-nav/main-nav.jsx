@@ -48,7 +48,7 @@ const MainNav = () => {
                 router.pathname === link.href ? "underline text-red-400" : ""
               }`}
             >
-              {link.icon}
+              {/* {link.icon} */}
               <span>{link.label}</span>
             </Link>
           </li>
