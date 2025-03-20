@@ -13,6 +13,9 @@ model FootballAssociation {
   code        String                       @unique
   lastUpdated DateTime                     @updatedAt
   countries   FootballAssociationCountry[]
+
+  @@index([name])
+  @@index([code])
 }
 
 model Season {
@@ -23,6 +26,8 @@ model Season {
   fixtures      Fixture[] // 👈 Backrelation to Fixture
   standings     Standings[]
   fixtureEvents FixtureEvent[] @relation("SeasonEvents")
+
+  @@index([year])
 }
 
 model Country {
@@ -35,6 +40,9 @@ model Country {
   leagues              League[]
   teams                Team[]
   footballAssociations FootballAssociationCountry[]
+
+  @@index([name])
+  @@index([code])
 }
 
 model League {
@@ -52,6 +60,9 @@ model League {
 
   fixtures      Fixture[] // 👈 Backrelation for home matches
   fixtureEvents FixtureEvent[] @relation("LeagueEvents")
+
+  @@index([name])
+  @@index([countryId])
 }
 
 model LeagueSeason {
@@ -63,6 +74,8 @@ model LeagueSeason {
   lastUpdated DateTime @default(now()) @updatedAt
 
   @@unique([leagueId, seasonId])
+  @@index([leagueId])
+  @@index([seasonId])
 }
 
 model FootballAssociationCountry {
@@ -77,6 +90,8 @@ model FootballAssociationCountry {
   lastUpdated DateTime @default(now()) @updatedAt
 
   @@unique([associationId, countryId])
+  @@index([associationId])
+  @@index([countryId])
 }
 
 model Team {
@@ -108,6 +123,9 @@ model Team {
   lastUpdated DateTime @default(now()) @updatedAt
 
   fixtureEvents FixtureEvent[] @relation("TeamEvents")
+
+  @@index([name])
+  @@index([countryId])
 }
 
 model Venue {
@@ -122,6 +140,9 @@ model Venue {
   lastUpdated DateTime  @default(now()) @updatedAt
   fixtures    Fixture[] // 👈 Backrelation to Fixture
   teams       Team[]
+
+  @@index([name])
+  @@index([city])
 }
 
 model Player {
@@ -149,6 +170,10 @@ model Player {
 
   fixtureEventsFixturePlayer FixtureEvent[] @relation("FixtureEventPlayer")
   fixtureEventsFixtureAssist FixtureEvent[] @relation("FixtureEventAssist")
+
+  @@index([name])
+  @@index([birthCountry])
+  @@index([nationality])
 }
 
 model PlayerTeam {
@@ -160,6 +185,9 @@ model PlayerTeam {
   season   Int
 
   @@unique([playerId, teamId, season])
+  @@index([playerId])
+  @@index([teamId])
+  @@index([season])
 }
 
 model PlayerStatistic {
@@ -180,6 +208,10 @@ model PlayerStatistic {
   cleanSheets   Int?
 
   @@unique([playerId, teamId, leagueId, season])
+  @@index([playerId])
+  @@index([teamId])
+  @@index([leagueId])
+  @@index([season])
 }
 
 model PlayerTransfer {
@@ -197,6 +229,9 @@ model PlayerTransfer {
   transferFee  String?
 
   @@unique([playerId, fromTeamId, toTeamId, transferDate])
+  @@index([playerId])
+  @@index([fromTeamId])
+  @@index([toTeamId])
 }
 
 model Coach {
@@ -220,6 +255,9 @@ model Coach {
   career CoachCareer[]
 
   lastUpdated DateTime @default(now()) @updatedAt
+
+  @@index([name])
+  @@index([teamId])
 }
 
 model CoachCareer {
@@ -232,6 +270,8 @@ model CoachCareer {
   end     DateTime?
 
   @@unique([coachId, teamId, start])
+  @@index([coachId])
+  @@index([teamId])
 }
 
 model PlayerSidelined {
@@ -245,6 +285,7 @@ model PlayerSidelined {
   lastUpdated DateTime @default(now()) @updatedAt
 
   @@unique([playerId, type, startDate]) // Prevent duplicate records for the same event
+  @@index([playerId])
 }
 
 model Fixture {
@@ -281,6 +322,12 @@ model Fixture {
   updatedAt DateTime @updatedAt
 
   fixtureEvents FixtureEvent[] @relation("FixtureEvents")
+
+  @@index([leagueId])
+  @@index([seasonId])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@index([venueId])
 }
 
 model MatchLineup {
@@ -300,6 +347,10 @@ model MatchLineup {
   fixture Fixture @relation(fields: [fixtureId], references: [id])
   team    Team    @relation(fields: [teamId], references: [id])
   player  Player  @relation(fields: [playerId], references: [id])
+
+  @@index([fixtureId])
+  @@index([teamId])
+  @@index([playerId])
 }
 
 model FixtureEvent {
@@ -324,10 +375,15 @@ model FixtureEvent {
   season  Season  @relation("SeasonEvents", fields: [seasonId], references: [id])
   team    Team    @relation("TeamEvents", fields: [teamId], references: [id])
 
-  // Specify distinct relation names for player and assist
   player Player? @relation("FixtureEventPlayer", fields: [playerId], references: [id])
   assist Player? @relation("FixtureEventAssist", fields: [assistId], references: [id])
 
+  @@index([fixtureId])
+  @@index([leagueId])
+  @@index([seasonId])
+  @@index([teamId])
+  @@index([playerId])
+  @@index([assistId])
   @@map("fixture_events")
 }
 
@@ -349,4 +405,8 @@ model Standings {
   league League @relation(fields: [leagueId], references: [id])
   season Season @relation(fields: [seasonId], references: [id])
   team   Team   @relation(fields: [teamId], references: [id])
+
+  @@index([leagueId])
+  @@index([seasonId])
+  @@index([teamId])
 }
