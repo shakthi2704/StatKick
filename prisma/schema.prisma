@@ -20,6 +20,9 @@ model Season {
   year          Int            @unique @db.SmallInt
   lastUpdated   DateTime       @default(now()) @updatedAt
   leagueSeasons LeagueSeason[]
+  fixtures      Fixture[] // 👈 Backrelation to Fixture
+  standings     Standings[]
+  fixtureEvents FixtureEvent[] @relation("SeasonEvents")
 }
 
 model Country {
@@ -45,6 +48,10 @@ model League {
   lastUpdated      DateTime          @default(now()) @updatedAt
   leagueSeasons    LeagueSeason[]
   playerStatistics PlayerStatistic[]
+  standings        Standings[]
+
+  fixtures      Fixture[] // 👈 Backrelation for home matches
+  fixtureEvents FixtureEvent[] @relation("LeagueEvents")
 }
 
 model LeagueSeason {
@@ -90,26 +97,31 @@ model Team {
   playerStatistics PlayerStatistic[]
   transfersOut     PlayerTransfer[]  @relation(name: "TransferFrom")
   transfersIn      PlayerTransfer[]  @relation(name: "TransferTo")
-
-
-  coaches      Coach[]
-  coachCareers CoachCareer[]
+  lineups          MatchLineup[]
+  coaches          Coach[]
+  coachCareers     CoachCareer[]
+  homeFixtures     Fixture[]         @relation("HomeTeam") // 👈 Backrelation for home matches
+  awayFixtures     Fixture[]         @relation("AwayTeam") // 👈 Backrelation for away matches
+  wonFixtures      Fixture[]         @relation("WinnerTeam") // 👈 Backrelation for matches won
+  standings        Standings[]
 
   lastUpdated DateTime @default(now()) @updatedAt
+
+  fixtureEvents FixtureEvent[] @relation("TeamEvents")
 }
 
 model Venue {
-  id          Int      @id @default(autoincrement())
-  venueId     Int      @unique
+  id          Int       @id @default(autoincrement())
+  venueId     Int       @unique
   name        String
   address     String?
   city        String
   capacity    Int?
   surface     String?
   image       String?
-  lastUpdated DateTime @default(now()) @updatedAt
-
-  teams Team[]
+  lastUpdated DateTime  @default(now()) @updatedAt
+  fixtures    Fixture[] // 👈 Backrelation to Fixture
+  teams       Team[]
 }
 
 model Player {
@@ -131,8 +143,12 @@ model Player {
   playerTeams      PlayerTeam[]
   playerStatistics PlayerStatistic[]
   playerTransfers  PlayerTransfer[]
+  sidelined        PlayerSidelined[]
+  lineups          MatchLineup[]
+  lastUpdated      DateTime          @default(now()) @updatedAt
 
-  lastUpdated DateTime @default(now()) @updatedAt
+  fixtureEventsFixturePlayer FixtureEvent[] @relation("FixtureEventPlayer")
+  fixtureEventsFixtureAssist FixtureEvent[] @relation("FixtureEventAssist")
 }
 
 model PlayerTeam {
@@ -184,20 +200,19 @@ model PlayerTransfer {
 }
 
 model Coach {
-  id         Int      @id @default(autoincrement())
-  externalId Int      @unique
-  name       String
-  firstname  String?
-  lastname   String?
-  age        Int?
-  birthDate  DateTime?
-  birthPlace String?
+  id           Int       @id @default(autoincrement())
+  externalId   Int       @unique
+  name         String
+  firstname    String?
+  lastname     String?
+  age          Int?
+  birthDate    DateTime?
+  birthPlace   String?
   birthCountry String?
   nationality  String?
   height       String?
   weight       String?
   photoUrl     String?
-
 
   teamId Int?
   team   Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
@@ -208,13 +223,130 @@ model Coach {
 }
 
 model CoachCareer {
-  id       Int    @id @default(autoincrement())
-  coach    Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  coachId  Int
-  team     Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  teamId   Int
-  start    DateTime?
-  end      DateTime?
-  
+  id      Int       @id @default(autoincrement())
+  coach   Coach     @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  coachId Int
+  team    Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId  Int
+  start   DateTime?
+  end     DateTime?
+
   @@unique([coachId, teamId, start])
+}
+
+model PlayerSidelined {
+  id        Int       @id @default(autoincrement())
+  player    Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId  Int
+  type      String // Type of sidelined event (Injury, Suspension, etc.)
+  startDate DateTime // Start date of the sidelined period
+  endDate   DateTime? // End date (nullable if ongoing)
+
+  lastUpdated DateTime @default(now()) @updatedAt
+
+  @@unique([playerId, type, startDate]) // Prevent duplicate records for the same event
+}
+
+model Fixture {
+  id         Int @id @default(autoincrement())
+  externalId Int @unique
+
+  league   League @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  leagueId Int
+
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  seasonId Int
+
+  homeTeam   Team @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  homeTeamId Int
+
+  awayTeam   Team @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
+  awayTeamId Int
+
+  venue   Venue? @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  venueId Int?
+
+  refereeName String?
+  date        DateTime
+  status      String
+  homeScore   Int?
+  awayScore   Int?
+
+  winnerTeam   Team? @relation("WinnerTeam", fields: [winnerTeamId], references: [id], onDelete: SetNull)
+  winnerTeamId Int?
+
+  lineups MatchLineup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  fixtureEvents FixtureEvent[] @relation("FixtureEvents")
+}
+
+model MatchLineup {
+  id           Int     @id @default(autoincrement())
+  fixtureId    Int
+  teamId       Int
+  coachId      Int
+  coachName    String
+  formation    String
+  playerId     Int
+  playerName   String
+  playerNumber Int
+  position     String
+  grid         String? // Nullable because some substitutes may not have a grid position
+  isSubstitute Boolean
+
+  fixture Fixture @relation(fields: [fixtureId], references: [id])
+  team    Team    @relation(fields: [teamId], references: [id])
+  player  Player  @relation(fields: [playerId], references: [id])
+}
+
+model FixtureEvent {
+  id         Int     @id @default(autoincrement())
+  fixtureId  Int
+  leagueId   Int
+  seasonId   Int
+  elapsed    Int
+  extra      Int?
+  teamId     Int
+  teamName   String
+  playerId   Int?
+  playerName String?
+  assistId   Int?
+  assistName String?
+  type       String
+  detail     String
+  comments   String?
+
+  fixture Fixture @relation("FixtureEvents", fields: [fixtureId], references: [id])
+  league  League  @relation("LeagueEvents", fields: [leagueId], references: [id])
+  season  Season  @relation("SeasonEvents", fields: [seasonId], references: [id])
+  team    Team    @relation("TeamEvents", fields: [teamId], references: [id])
+
+  // Specify distinct relation names for player and assist
+  player Player? @relation("FixtureEventPlayer", fields: [playerId], references: [id])
+  assist Player? @relation("FixtureEventAssist", fields: [assistId], references: [id])
+
+  @@map("fixture_events")
+}
+
+model Standings {
+  id             Int @id @default(autoincrement())
+  leagueId       Int
+  seasonId       Int
+  teamId         Int
+  position       Int
+  points         Int
+  games          Int
+  wins           Int
+  draws          Int
+  losses         Int
+  goalsFor       Int
+  goalsAgainst   Int
+  goalDifference Int
+
+  league League @relation(fields: [leagueId], references: [id])
+  season Season @relation(fields: [seasonId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
 }
