@@ -34,7 +34,7 @@ export async function GET() {
 
     // Inserting new country data
     for (const country of countries) {
-      let countryCode = country.code ?? null
+      let countryCode = country.code ?? "WORLD" // 👈 Fallback to "WORLD"
       let countryName = country.name
 
       if (!countryName) {
@@ -46,7 +46,7 @@ export async function GET() {
         await prisma.country.upsert({
           where: { name: countryName },
           update: {
-            code: countryCode, // Safe to be null
+            code: countryCode, // Safe to be "WORLD"
             flag: country.flag,
             lastUpdated: new Date(),
           },
